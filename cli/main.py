@@ -86,7 +86,7 @@ def run(
     config: Annotated[Path, typer.Option(help="Path to fork config YAML")],
 ):
     """Run a fork & compare workflow."""
-    console.print(f"[bold]Fork & Compare[/bold]")
+    console.print("[bold]Fork & Compare[/bold]")
     console.print(f"Conversation: {conversation}")
     console.print(f"Fork at step: {fork_at}")
     console.print(f"Orchestrator: {orchestrator}")
