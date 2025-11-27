@@ -1,0 +1,49 @@
+[project]
+name = "agent-replay-lab"
+version = "0.1.0"
+description = "Compare orchestration tools for Claude Code agent workflows"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "pydantic>=2.0",
+    "typer>=0.9",
+    "rich>=13.0",
+    "anthropic>=0.40",
+]
+
+[project.optional-dependencies]
+temporal = [
+    "temporalio>=1.7",
+]
+prefect = [
+    "prefect>=3.0",
+]
+dagster = [
+    "dagster>=1.8",
+    "dagster-webserver>=1.8",
+]
+all = [
+    "agent-replay-lab[temporal,prefect,dagster]",
+]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.24",
+    "ruff>=0.6",
+]
+
+[project.scripts]
+agent-replay-lab = "cli.main:app"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"

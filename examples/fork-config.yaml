@@ -1,0 +1,22 @@
+# Example fork configuration for agent-replay-lab
+# Use with: agent-replay-lab run --config examples/fork-config.yaml
+
+branches:
+  - name: "sonnet-baseline"
+    model: "claude-sonnet-4-20250514"
+
+  - name: "haiku-speed"
+    model: "claude-haiku-4-20250514"
+
+  - name: "opus-quality"
+    model: "claude-opus-4-20250514"
+
+  - name: "alternative-question"
+    model: "claude-sonnet-4-20250514"
+    inject_message: "What if we used a different approach?"
+
+settings:
+  max_turns: 5
+  timeout_seconds: 300
+  save_results: true
+  output_dir: "./results"
