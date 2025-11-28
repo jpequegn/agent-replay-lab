@@ -10,6 +10,7 @@ from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
 
+from core.config import ConfigError, load_config
 from core.conversation import list_conversations, load_conversation
 
 app = typer.Typer(
@@ -170,14 +171,52 @@ def run(
     orchestrator: Annotated[
         str, typer.Option(help="Orchestrator to use (temporal|prefect|dagster)")
     ],
-    config: Annotated[Path, typer.Option(help="Path to fork config YAML")],
+    config_path: Annotated[Path, typer.Option("--config", help="Path to fork config YAML")],
 ):
     """Run a fork & compare workflow."""
-    console.print("[bold]Fork & Compare[/bold]")
-    console.print(f"Conversation: {conversation}")
-    console.print(f"Fork at step: {fork_at}")
-    console.print(f"Orchestrator: {orchestrator}")
-    console.print(f"Config: {config}")
+    # Load and validate configuration
+    try:
+        config = load_config(config_path)
+    except ConfigError as e:
+        console.print(f"[red]Configuration error:[/red] {e.message}")
+        if e.details:
+            for detail in e.details:
+                console.print(f"  [dim]• {detail}[/dim]")
+        raise typer.Exit(1)
+
+    # Display configuration summary
+    console.print(Panel(
+        f"[bold]Conversation:[/bold] {conversation}\n"
+        f"[bold]Fork at step:[/bold] {fork_at}\n"
+        f"[bold]Orchestrator:[/bold] {orchestrator}\n"
+        f"[bold]Branches:[/bold] {len(config.branches)}",
+        title="Fork & Compare",
+        border_style="blue",
+    ))
+    console.print()
+
+    # Show branch configurations
+    table = Table(title="Branch Configurations")
+    table.add_column("Name", style="cyan")
+    table.add_column("Model", style="green")
+    table.add_column("Max Turns", justify="right")
+    table.add_column("Inject Message")
+
+    for branch in config.branches:
+        inject = branch.inject_message[:30] + "..." if branch.inject_message else "-"
+        table.add_row(
+            branch.name,
+            branch.model.replace("claude-", "").replace("-20250514", ""),
+            str(branch.max_turns),
+            inject,
+        )
+
+    console.print(table)
+    console.print()
+
+    # Show settings
+    console.print(f"[dim]Settings: timeout={config.settings.timeout_seconds}s, "
+                  f"output={config.settings.output_dir}[/dim]")
     console.print()
 
     # TODO: Implement orchestrator dispatch
