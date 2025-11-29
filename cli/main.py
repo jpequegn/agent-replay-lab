@@ -1,5 +1,7 @@
 """CLI entry point for agent-replay-lab."""
 
+import asyncio
+import json
 from datetime import datetime
 from pathlib import Path
 from typing import Annotated
@@ -7,17 +9,177 @@ from typing import Annotated
 import typer
 from rich.console import Console
 from rich.panel import Panel
+from rich.progress import Progress, SpinnerColumn, TextColumn, TimeElapsedColumn
 from rich.table import Table
 from rich.text import Text
 
 from core.config import ConfigError, load_config
 from core.conversation import list_conversations, load_conversation
+from core.models import ReplayRequest
 
 app = typer.Typer(
     name="agent-replay-lab",
     help="Compare orchestration tools for Claude Code agent workflows",
 )
 console = Console()
+
+
+# =============================================================================
+# Orchestrator Dispatch Functions
+# =============================================================================
+
+
+async def _run_temporal_workflow(
+    request: ReplayRequest,
+    output_dir: Path,
+) -> dict:
+    """Run workflow via Temporal orchestrator.
+
+    Args:
+        request: The replay request to execute
+        output_dir: Directory to save results
+
+    Returns:
+        ComparisonResult as dict
+    """
+    from orchestrators.temporal.client import (
+        WorkflowStatus,
+        get_client,
+        get_workflow_status,
+        start_fork_compare_workflow,
+    )
+
+    # Connect to Temporal
+    client = await get_client()
+
+    # Start workflow (non-blocking)
+    handle = await start_fork_compare_workflow(
+        request_dict=request.model_dump(),
+        client=client,
+    )
+    workflow_id = handle.id
+
+    console.print(f"[green]✓[/green] Workflow started: [cyan]{workflow_id}[/cyan]")
+    console.print()
+
+    # Poll for completion with progress display
+    with Progress(
+        SpinnerColumn(),
+        TextColumn("[progress.description]{task.description}"),
+        TimeElapsedColumn(),
+        console=console,
+    ) as progress:
+        task = progress.add_task("Executing workflow...", total=None)
+
+        while True:
+            info = await get_workflow_status(workflow_id, client=client)
+
+            if info.status == WorkflowStatus.COMPLETED:
+                progress.update(task, description="[green]Workflow completed[/green]")
+                break
+            elif info.status == WorkflowStatus.FAILED:
+                progress.update(task, description="[red]Workflow failed[/red]")
+                raise typer.Exit(1)
+            elif info.status == WorkflowStatus.CANCELLED:
+                progress.update(task, description="[yellow]Workflow cancelled[/yellow]")
+                raise typer.Exit(1)
+            elif info.status == WorkflowStatus.TIMED_OUT:
+                progress.update(task, description="[red]Workflow timed out[/red]")
+                raise typer.Exit(1)
+
+            # Update progress with branch count if available
+            progress.update(task, description=f"Executing workflow ({info.status.value})...")
+
+            await asyncio.sleep(1)
+
+    # Get result
+    result = await handle.result()
+
+    # Save results
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    result_file = output_dir / f"result-{workflow_id}-{timestamp}.json"
+
+    with open(result_file, "w") as f:
+        json.dump(result, f, indent=2, default=str)
+
+    console.print(f"[green]✓[/green] Results saved to: [cyan]{result_file}[/cyan]")
+
+    return result
+
+
+def _display_results(result: dict) -> None:
+    """Display workflow results in a formatted table.
+
+    Args:
+        result: ComparisonResult as dict
+    """
+    console.print()
+    console.print(
+        Panel(
+            f"[bold]Total Duration:[/bold] {result.get('total_duration_ms', 0)}ms\n"
+            f"[bold]Branches:[/bold] {len(result.get('branches', []))}",
+            title="Results Summary",
+            border_style="green",
+        )
+    )
+    console.print()
+
+    # Branch results table
+    branches = result.get("branches", [])
+    if branches:
+        table = Table(title="Branch Results")
+        table.add_column("Branch", style="cyan")
+        table.add_column("Status", justify="center")
+        table.add_column("Duration", justify="right")
+        table.add_column("Messages", justify="right")
+        table.add_column("Tokens", justify="right")
+
+        for branch in branches:
+            status = branch.get("status", "unknown")
+            status_style = {
+                "success": "[green]✓ success[/green]",
+                "error": "[red]✗ error[/red]",
+                "timeout": "[yellow]⏱ timeout[/yellow]",
+            }.get(status, f"[dim]{status}[/dim]")
+
+            duration = f"{branch.get('duration_ms', 0)}ms"
+            messages = str(len(branch.get("messages", [])))
+
+            # Token usage
+            token_usage = branch.get("token_usage")
+            tokens = "-"
+            if token_usage:
+                tokens = str(token_usage.get("total_tokens", 0))
+
+            table.add_row(
+                branch.get("branch_name", "unknown"),
+                status_style,
+                duration,
+                messages,
+                tokens,
+            )
+
+        console.print(table)
+
+    # Show errors if any
+    errors = [b for b in branches if b.get("error")]
+    if errors:
+        console.print()
+        console.print("[red]Errors:[/red]")
+        for branch in errors:
+            console.print(f"  • [cyan]{branch.get('branch_name')}[/cyan]: {branch.get('error')}")
+
+    # Comparison summary
+    summary = result.get("comparison_summary")
+    if summary:
+        console.print()
+        console.print(
+            f"[dim]Summary: {summary.get('successful', 0)} successful, "
+            f"{summary.get('failed', 0)} failed[/dim]"
+        )
 
 
 @app.command(name="list")
@@ -83,13 +245,15 @@ def inspect(
         raise typer.Exit(1)
 
     # Header
-    console.print(Panel(
-        f"[bold cyan]{conv.session_id}[/bold cyan]\n"
-        f"[dim]Project:[/dim] {conv.project_path}\n"
-        f"[dim]Total steps:[/dim] {conv.step_count}",
-        title="Conversation",
-        border_style="blue",
-    ))
+    console.print(
+        Panel(
+            f"[bold cyan]{conv.session_id}[/bold cyan]\n"
+            f"[dim]Project:[/dim] {conv.project_path}\n"
+            f"[dim]Total steps:[/dim] {conv.step_count}",
+            title="Conversation",
+            border_style="blue",
+        )
+    )
     console.print()
 
     if step:
@@ -108,11 +272,13 @@ def inspect(
             content = content[:1000]
             truncated = True
 
-        console.print(Panel(
-            content,
-            title=f"Step {step} [{msg.role}]",
-            border_style=role_color,
-        ))
+        console.print(
+            Panel(
+                content,
+                title=f"Step {step} [{msg.role}]",
+                border_style=role_color,
+            )
+        )
 
         if truncated:
             console.print("[dim]... content truncated. Use --full to see all.[/dim]")
@@ -158,10 +324,7 @@ def inspect(
             table.add_row(str(i), role_text, preview, tools)
 
         console.print(table)
-        console.print(
-            "\n[dim]Use --step N to see full content. "
-            "Tools: ↗=calls, ↩=results[/dim]"
-        )
+        console.print("\n[dim]Use --step N to see full content. Tools: ↗=calls, ↩=results[/dim]")
 
 
 @app.command()
@@ -185,14 +348,16 @@ def run(
         raise typer.Exit(1)
 
     # Display configuration summary
-    console.print(Panel(
-        f"[bold]Conversation:[/bold] {conversation}\n"
-        f"[bold]Fork at step:[/bold] {fork_at}\n"
-        f"[bold]Orchestrator:[/bold] {orchestrator}\n"
-        f"[bold]Branches:[/bold] {len(config.branches)}",
-        title="Fork & Compare",
-        border_style="blue",
-    ))
+    console.print(
+        Panel(
+            f"[bold]Conversation:[/bold] {conversation}\n"
+            f"[bold]Fork at step:[/bold] {fork_at}\n"
+            f"[bold]Orchestrator:[/bold] {orchestrator}\n"
+            f"[bold]Branches:[/bold] {len(config.branches)}",
+            title="Fork & Compare",
+            border_style="blue",
+        )
+    )
     console.print()
 
     # Show branch configurations
@@ -215,13 +380,44 @@ def run(
     console.print()
 
     # Show settings
-    console.print(f"[dim]Settings: timeout={config.settings.timeout_seconds}s, "
-                  f"output={config.settings.output_dir}[/dim]")
+    console.print(
+        f"[dim]Settings: timeout={config.settings.timeout_seconds}s, "
+        f"output={config.settings.output_dir}[/dim]"
+    )
     console.print()
 
-    # TODO: Implement orchestrator dispatch
-    console.print(f"[yellow]Orchestrator '{orchestrator}' not yet implemented[/yellow]")
-    console.print("[dim]Coming soon: Temporal, Prefect, Dagster implementations[/dim]")
+    # Build ReplayRequest
+    request = ReplayRequest(
+        conversation_id=conversation,
+        fork_at_step=fork_at,
+        branches=config.branches,
+    )
+
+    # Dispatch to orchestrator
+    if orchestrator == "temporal":
+        try:
+            result = asyncio.run(
+                _run_temporal_workflow(
+                    request=request,
+                    output_dir=Path(config.settings.output_dir),
+                )
+            )
+            _display_results(result)
+        except ConnectionRefusedError:
+            console.print("[red]Error: Cannot connect to Temporal server[/red]")
+            console.print("[dim]Make sure Temporal is running: temporal server start-dev[/dim]")
+            raise typer.Exit(1)
+        except Exception as e:
+            console.print(f"[red]Error: {e}[/red]")
+            raise typer.Exit(1)
+    elif orchestrator in ("prefect", "dagster"):
+        console.print(f"[yellow]Orchestrator '{orchestrator}' not yet implemented[/yellow]")
+        console.print("[dim]Coming soon in future releases[/dim]")
+        raise typer.Exit(1)
+    else:
+        console.print(f"[red]Unknown orchestrator: {orchestrator}[/red]")
+        console.print("[dim]Valid options: temporal, prefect, dagster[/dim]")
+        raise typer.Exit(1)
 
 
 @app.command()
