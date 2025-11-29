@@ -46,8 +46,33 @@ from .activities import (
     greet_activity,
     load_conversation_activity,
 )
-from .client import get_client, run_greeting_workflow
-from .worker import TASK_QUEUE
+from .client import (
+    # Configuration
+    DEFAULT_NAMESPACE,
+    DEFAULT_TEMPORAL_ADDRESS,
+    FORK_COMPARE_EXECUTION_TIMEOUT,
+    GREETING_EXECUTION_TIMEOUT,
+    # Status types
+    WorkflowInfo,
+    WorkflowStatus,
+    # Client functions
+    cancel_workflow,
+    get_client,
+    get_workflow_result,
+    get_workflow_status,
+    list_workflows,
+    run_fork_compare_workflow,
+    run_greeting_workflow,
+    start_fork_compare_workflow,
+)
+from .worker import (
+    ACTIVITIES,
+    TASK_QUEUE,
+    WORKFLOWS,
+    WorkerShutdownError,
+    create_worker,
+    run_worker,
+)
 from .workflows import ForkCompareWorkflow, GreetingWorkflow
 
 __all__ = [
@@ -70,9 +95,28 @@ __all__ = [
     # Workflows
     "GreetingWorkflow",
     "ForkCompareWorkflow",
-    # Client
+    # Client Configuration
+    "DEFAULT_TEMPORAL_ADDRESS",
+    "DEFAULT_NAMESPACE",
+    "FORK_COMPARE_EXECUTION_TIMEOUT",
+    "GREETING_EXECUTION_TIMEOUT",
+    # Client Status Types
+    "WorkflowStatus",
+    "WorkflowInfo",
+    # Client Functions
     "get_client",
     "run_greeting_workflow",
-    # Constants
+    "run_fork_compare_workflow",
+    "start_fork_compare_workflow",
+    "get_workflow_status",
+    "get_workflow_result",
+    "cancel_workflow",
+    "list_workflows",
+    # Worker
     "TASK_QUEUE",
+    "WORKFLOWS",
+    "ACTIVITIES",
+    "WorkerShutdownError",
+    "create_worker",
+    "run_worker",
 ]
