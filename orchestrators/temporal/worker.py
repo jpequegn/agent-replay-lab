@@ -23,7 +23,7 @@ from .activities import (
     greet_activity,
     load_conversation_activity,
 )
-from .workflows import GreetingWorkflow
+from .workflows import ForkCompareWorkflow, GreetingWorkflow
 
 # Task queue name - all workflows and activities use this
 TASK_QUEUE = "fork-compare-queue"
@@ -38,7 +38,7 @@ async def main():
     worker = Worker(
         client,
         task_queue=TASK_QUEUE,
-        workflows=[GreetingWorkflow],
+        workflows=[GreetingWorkflow, ForkCompareWorkflow],
         activities=[
             greet_activity,
             load_conversation_activity,
@@ -49,7 +49,9 @@ async def main():
     )
 
     print(f"Starting Temporal worker on task queue: {TASK_QUEUE}")
-    print("Registered workflows: GreetingWorkflow")
+    print("Registered workflows:")
+    print("  - GreetingWorkflow")
+    print("  - ForkCompareWorkflow")
     print("Registered activities:")
     print("  - greet_activity")
     print("  - load_conversation_activity")
