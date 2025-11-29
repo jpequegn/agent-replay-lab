@@ -12,7 +12,6 @@ import inspect
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from prefect.states import Completed, Failed
 
 # =============================================================================
 # Tests for Helper Functions
@@ -292,13 +291,15 @@ class TestForkCompareFlowExecution:
             ),
             patch("orchestrators.prefect.flows.wait"),
         ):
-            # Create mock futures that return results
+            # Create mock futures with is_completed/is_failed methods (Prefect 3.x API)
             mock_future_1 = MagicMock()
-            mock_future_1.state = Completed()
+            mock_future_1.state.is_completed.return_value = True
+            mock_future_1.state.is_failed.return_value = False
             mock_future_1.result.return_value = mock_branch_results[0]
 
             mock_future_2 = MagicMock()
-            mock_future_2.state = Completed()
+            mock_future_2.state.is_completed.return_value = True
+            mock_future_2.state.is_failed.return_value = False
             mock_future_2.result.return_value = mock_branch_results[1]
 
             mock_execute.submit.side_effect = [mock_future_1, mock_future_2]
@@ -355,7 +356,8 @@ class TestForkCompareFlowExecution:
             patch("orchestrators.prefect.flows.wait"),
         ):
             mock_future = MagicMock()
-            mock_future.state = Completed()
+            mock_future.state.is_completed.return_value = True
+            mock_future.state.is_failed.return_value = False
             mock_future.result.return_value = mock_branch_result
 
             mock_execute.submit.return_value = mock_future
@@ -400,12 +402,16 @@ class TestForkCompareFlowExecution:
             ),
             patch("orchestrators.prefect.flows.wait"),
         ):
-            # Both futures fail
+            # Both futures fail - mock state with is_completed=False, is_failed=True
             mock_future_1 = MagicMock()
-            mock_future_1.state = Failed(message="Error 1")
+            mock_future_1.state.is_completed.return_value = False
+            mock_future_1.state.is_failed.return_value = True
+            mock_future_1.state.result.return_value = Exception("Error 1")
 
             mock_future_2 = MagicMock()
-            mock_future_2.state = Failed(message="Error 2")
+            mock_future_2.state.is_completed.return_value = False
+            mock_future_2.state.is_failed.return_value = True
+            mock_future_2.state.result.return_value = Exception("Error 2")
 
             mock_execute.submit.side_effect = [mock_future_1, mock_future_2]
 

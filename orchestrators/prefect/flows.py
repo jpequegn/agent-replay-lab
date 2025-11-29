@@ -19,7 +19,6 @@ from typing import Any
 from prefect import flow
 from prefect.futures import wait
 from prefect.logging import get_run_logger
-from prefect.states import Completed, Failed
 
 from .tasks import (
     compare_results_task,
@@ -136,11 +135,13 @@ def _process_branch_futures(
             # Wait for the future to complete and get the state
             state = future.state
 
-            if isinstance(state, Completed):
+            # Prefect 3.x uses state methods, not isinstance checks
+            # Completed/Failed are functions that return State objects
+            if state.is_completed():
                 result = future.result()
                 branch_results.append(result)
                 logger.info(f"  ✓ Branch '{branch_name}' completed successfully")
-            elif isinstance(state, Failed):
+            elif state.is_failed():
                 error = state.result(raise_on_failure=False)
                 logger.error(f"  ✗ Branch '{branch_name}' failed: {error}")
                 branch_results.append(_create_error_result(branch_name, error))
