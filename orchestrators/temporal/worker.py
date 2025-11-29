@@ -17,6 +17,7 @@ from temporalio.client import Client
 from temporalio.worker import Worker
 
 from .activities import (
+    compare_results_activity,
     create_checkpoint_activity,
     execute_branch_activity,
     greet_activity,
@@ -43,11 +44,18 @@ async def main():
             load_conversation_activity,
             create_checkpoint_activity,
             execute_branch_activity,
+            compare_results_activity,
         ],
     )
 
     print(f"Starting Temporal worker on task queue: {TASK_QUEUE}")
     print("Registered workflows: GreetingWorkflow")
+    print("Registered activities:")
+    print("  - greet_activity")
+    print("  - load_conversation_activity")
+    print("  - create_checkpoint_activity")
+    print("  - execute_branch_activity")
+    print("  - compare_results_activity")
     print("Press Ctrl+C to stop")
 
     # Run the worker
