@@ -21,13 +21,34 @@ workflow, enabling parallel execution with built-in observability.
 - flows.py: Flow definitions (orchestration logic)
 """
 
-from .flows import GreetingFlow, run_greeting_flow
-from .tasks import greet_task
+from .flows import ForkCompareFlow, GreetingFlow, run_fork_compare_flow, run_greeting_flow
+from .tasks import (
+    NON_RETRYABLE_ERRORS,
+    RetryConfig,
+    TaskTimeouts,
+    compare_results_task,
+    create_checkpoint_task,
+    execute_branch_task,
+    greet_task,
+    load_conversation_task,
+    should_retry,
+)
 
 __all__ = [
+    # Retry Configuration
+    "RetryConfig",
+    "TaskTimeouts",
+    "NON_RETRYABLE_ERRORS",
+    "should_retry",
     # Tasks
     "greet_task",
+    "load_conversation_task",
+    "create_checkpoint_task",
+    "execute_branch_task",
+    "compare_results_task",
     # Flows
     "GreetingFlow",
+    "ForkCompareFlow",
     "run_greeting_flow",
+    "run_fork_compare_flow",
 ]
