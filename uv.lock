@@ -13,7 +13,9 @@ version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "anthropic" },
+    { name = "prefect" },
     { name = "pydantic" },
+    { name = "pyyaml" },
     { name = "rich" },
     { name = "typer" },
 ]
@@ -47,10 +49,12 @@ requires-dist = [
     { name = "anthropic", specifier = ">=0.40" },
     { name = "dagster", marker = "extra == 'dagster'", specifier = ">=1.8" },
     { name = "dagster-webserver", marker = "extra == 'dagster'", specifier = ">=1.8" },
+    { name = "prefect", specifier = ">=3.6.4" },
     { name = "prefect", marker = "extra == 'prefect'", specifier = ">=3.0" },
     { name = "pydantic", specifier = ">=2.0" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0" },
     { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.24" },
+    { name = "pyyaml", specifier = ">=6.0" },
     { name = "rich", specifier = ">=13.0" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.6" },
     { name = "temporalio", marker = "extra == 'temporal'", specifier = ">=1.7" },
