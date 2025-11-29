@@ -29,8 +29,20 @@ workflow, enabling durable, resumable execution with automatic retries.
 """
 
 from .activities import (
+    # Retry policies
+    CLAUDE_API_RETRY_POLICY,
+    COMPUTE_RETRY_POLICY,
+    LOCAL_RETRY_POLICY,
+    # Timeout configurations
+    ActivityTimeouts,
+    # Activities
+    compare_results_activity,
     create_checkpoint_activity,
     execute_branch_activity,
+    # Activity option helpers
+    get_claude_activity_options,
+    get_compute_activity_options,
+    get_local_activity_options,
     greet_activity,
     load_conversation_activity,
 )
@@ -39,11 +51,22 @@ from .worker import TASK_QUEUE
 from .workflows import GreetingWorkflow
 
 __all__ = [
+    # Retry Policies
+    "CLAUDE_API_RETRY_POLICY",
+    "LOCAL_RETRY_POLICY",
+    "COMPUTE_RETRY_POLICY",
+    # Timeout Configurations
+    "ActivityTimeouts",
+    # Activity Option Helpers
+    "get_local_activity_options",
+    "get_claude_activity_options",
+    "get_compute_activity_options",
     # Activities
     "greet_activity",
     "load_conversation_activity",
     "create_checkpoint_activity",
     "execute_branch_activity",
+    "compare_results_activity",
     # Workflows
     "GreetingWorkflow",
     # Client
