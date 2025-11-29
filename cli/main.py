@@ -29,6 +29,66 @@ console = Console()
 # =============================================================================
 
 
+async def _run_prefect_workflow(
+    request: ReplayRequest,
+    output_dir: Path,
+) -> dict:
+    """Run workflow via Prefect orchestrator.
+
+    Prefect runs in ephemeral mode by default (no server required).
+    Progress is displayed during execution via Rich spinner.
+
+    Args:
+        request: The replay request to execute
+        output_dir: Directory to save results
+
+    Returns:
+        ComparisonResult as dict
+    """
+    from orchestrators.prefect.client import generate_flow_run_id, run_fork_compare_flow
+
+    # Generate flow run ID for tracking
+    flow_run_id = generate_flow_run_id(request.conversation_id)
+
+    console.print(f"[green]✓[/green] Flow started: [cyan]{flow_run_id}[/cyan]")
+    console.print("[dim]Running in ephemeral mode (no Prefect server required)[/dim]")
+    console.print()
+
+    # Execute flow with progress display
+    # Note: Prefect flows run synchronously in ephemeral mode
+    with Progress(
+        SpinnerColumn(),
+        TextColumn("[progress.description]{task.description}"),
+        TimeElapsedColumn(),
+        console=console,
+    ) as progress:
+        task = progress.add_task("Executing Prefect flow...", total=None)
+
+        try:
+            result = await run_fork_compare_flow(
+                request_dict=request.model_dump(),
+                flow_run_id=flow_run_id,
+            )
+            progress.update(task, description="[green]Flow completed[/green]")
+        except Exception:
+            progress.update(task, description="[red]Flow failed[/red]")
+            raise
+
+    # Save results
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    result_file = output_dir / f"result-{flow_run_id}-{timestamp}.json"
+
+    with open(result_file, "w") as f:
+        json.dump(result, f, indent=2, default=str)
+
+    console.print(f"[green]✓[/green] Results saved to: [cyan]{result_file}[/cyan]")
+
+    return result
+
+
 async def _run_temporal_workflow(
     request: ReplayRequest,
     output_dir: Path,
@@ -410,8 +470,20 @@ def run(
         except Exception as e:
             console.print(f"[red]Error: {e}[/red]")
             raise typer.Exit(1)
-    elif orchestrator in ("prefect", "dagster"):
-        console.print(f"[yellow]Orchestrator '{orchestrator}' not yet implemented[/yellow]")
+    elif orchestrator == "prefect":
+        try:
+            result = asyncio.run(
+                _run_prefect_workflow(
+                    request=request,
+                    output_dir=Path(config.settings.output_dir),
+                )
+            )
+            _display_results(result)
+        except Exception as e:
+            console.print(f"[red]Error: {e}[/red]")
+            raise typer.Exit(1)
+    elif orchestrator == "dagster":
+        console.print("[yellow]Orchestrator 'dagster' not yet implemented[/yellow]")
         console.print("[dim]Coming soon in future releases[/dim]")
         raise typer.Exit(1)
     else:

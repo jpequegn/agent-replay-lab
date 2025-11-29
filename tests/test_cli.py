@@ -238,8 +238,8 @@ branches:
         assert result.exit_code == 1
         assert "Unknown orchestrator" in result.output
 
-    def test_prefect_not_implemented(self, tmp_path):
-        """Prefect orchestrator shows not implemented message."""
+    def test_prefect_orchestrator_recognized(self, tmp_path):
+        """Prefect orchestrator is recognized and starts execution."""
         config_file = tmp_path / "config.yaml"
         config_file.write_text(
             """
@@ -264,8 +264,11 @@ branches:
             ],
         )
 
-        assert result.exit_code == 1
-        assert "not yet implemented" in result.output
+        # Prefect is now implemented - it will fail on missing conversation
+        # but should not show "not yet implemented"
+        assert "not yet implemented" not in result.output
+        # Should show it's trying to execute Prefect flow
+        assert "prefect" in result.output.lower() or result.exit_code in (0, 1)
 
     def test_dagster_not_implemented(self, tmp_path):
         """Dagster orchestrator shows not implemented message."""

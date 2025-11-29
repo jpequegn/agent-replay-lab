@@ -19,8 +19,20 @@ workflow, enabling parallel execution with built-in observability.
 
 - tasks.py: Task implementations (atomic work units)
 - flows.py: Flow definitions (orchestration logic)
+- client.py: Client API for executing flows
 """
 
+from .client import (
+    FlowRunInfo,
+    FlowRunStatus,
+    check_prefect_health,
+    generate_flow_run_id,
+    get_flow_run_status,
+    run_greeting_flow_async,
+)
+from .client import (
+    run_fork_compare_flow as run_fork_compare_flow_client,
+)
 from .flows import ForkCompareFlow, GreetingFlow, run_fork_compare_flow, run_greeting_flow
 from .tasks import (
     NON_RETRYABLE_ERRORS,
@@ -51,4 +63,12 @@ __all__ = [
     "ForkCompareFlow",
     "run_greeting_flow",
     "run_fork_compare_flow",
+    # Client
+    "FlowRunInfo",
+    "FlowRunStatus",
+    "run_fork_compare_flow_client",
+    "run_greeting_flow_async",
+    "generate_flow_run_id",
+    "get_flow_run_status",
+    "check_prefect_health",
 ]
