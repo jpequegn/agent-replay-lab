@@ -1,0 +1,32 @@
+# End-to-end test configuration for Temporal integration
+# Tests: Issue #11 - Temporal implementation end-to-end testing
+#
+# Usage:
+#   agent-replay-lab run \
+#     --conversation 2fea9deb-8a4 \
+#     --fork-at 6 \
+#     --orchestrator temporal \
+#     --config examples/e2e-test-config.yaml
+
+branches:
+  # Branch 1: Sonnet baseline - standard model
+  - name: "sonnet-baseline"
+    model: "claude-sonnet-4-20250514"
+    max_turns: 1
+
+  # Branch 2: Haiku - faster, cheaper model
+  - name: "haiku-speed"
+    model: "claude-haiku-4-20250514"
+    max_turns: 1
+
+  # Branch 3: Alternative approach with different message
+  - name: "alternative-message"
+    model: "claude-sonnet-4-20250514"
+    inject_message: "I'm at a workshop on Claude Code SDK. Help me take notes."
+    max_turns: 1
+
+settings:
+  max_turns: 1  # Keep it short for testing
+  timeout_seconds: 120
+  save_results: true
+  output_dir: "./results"
