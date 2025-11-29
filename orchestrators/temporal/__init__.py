@@ -48,7 +48,7 @@ from .activities import (
 )
 from .client import get_client, run_greeting_workflow
 from .worker import TASK_QUEUE
-from .workflows import GreetingWorkflow
+from .workflows import ForkCompareWorkflow, GreetingWorkflow
 
 __all__ = [
     # Retry Policies
@@ -69,6 +69,7 @@ __all__ = [
     "compare_results_activity",
     # Workflows
     "GreetingWorkflow",
+    "ForkCompareWorkflow",
     # Client
     "get_client",
     "run_greeting_workflow",
