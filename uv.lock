@@ -13,6 +13,8 @@ version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "anthropic" },
+    { name = "dagster" },
+    { name = "dagster-webserver" },
     { name = "prefect" },
     { name = "pydantic" },
     { name = "pyyaml" },
@@ -47,7 +49,9 @@ temporal = [
 requires-dist = [
     { name = "agent-replay-lab", extras = ["temporal", "prefect", "dagster"], marker = "extra == 'all'" },
     { name = "anthropic", specifier = ">=0.40" },
+    { name = "dagster", specifier = ">=1.12.3" },
     { name = "dagster", marker = "extra == 'dagster'", specifier = ">=1.8" },
+    { name = "dagster-webserver", specifier = ">=1.12.3" },
     { name = "dagster-webserver", marker = "extra == 'dagster'", specifier = ">=1.8" },
     { name = "prefect", specifier = ">=3.6.4" },
     { name = "prefect", marker = "extra == 'prefect'", specifier = ">=3.0" },
