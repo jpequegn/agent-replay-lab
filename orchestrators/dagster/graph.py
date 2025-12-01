@@ -163,6 +163,7 @@ def execute_single_branch_op(
         # Return error result instead of raising to allow partial success
         return {
             "branch_name": config.name,
+            "config": config.model_dump(),
             "status": "error",
             "error": str(e),
             "messages": [],
@@ -333,6 +334,7 @@ def fork_compare_all_in_one_op(
             branch_results.append(
                 {
                     "branch_name": fork_config.name,
+                    "config": fork_config.model_dump(),
                     "status": "error",
                     "error": str(e),
                     "messages": [],
