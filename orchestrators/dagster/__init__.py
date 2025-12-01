@@ -9,22 +9,48 @@ workflow, enabling parallel execution with built-in observability.
    uv add dagster dagster-webserver
 
 2. Start Dagster dev server:
-   cd orchestrators/dagster && uv run dagster dev
+   uv run dagster dev -m orchestrators.dagster.definitions
 
 3. Access UI at http://localhost:3000
 
 ## Components
 
 - definitions.py: Dagster definitions (assets, jobs, resources)
-- assets.py: Asset definitions (data pipeline components)
+- ops.py: Op definitions (atomic computation units)
 - jobs.py: Job definitions (orchestration workflows)
-- resources.py: Resource definitions (external services)
 """
 
-from orchestrators.dagster.definitions import defs
-from orchestrators.dagster.jobs import greeting_job
+from orchestrators.dagster.definitions import checkpoint_job, defs, greet_op_job
+from orchestrators.dagster.jobs import greeting_graph_job, greeting_job
+from orchestrators.dagster.ops import (
+    CLAUDE_API_RETRY_POLICY,
+    COMPUTE_RETRY_POLICY,
+    LOCAL_RETRY_POLICY,
+    RetryConfig,
+    compare_results_op,
+    create_checkpoint_op,
+    execute_branch_op,
+    greet_op,
+    load_conversation_op,
+)
 
 __all__ = [
+    # Definitions
     "defs",
+    # Retry Configuration
+    "RetryConfig",
+    "LOCAL_RETRY_POLICY",
+    "CLAUDE_API_RETRY_POLICY",
+    "COMPUTE_RETRY_POLICY",
+    # Ops
+    "greet_op",
+    "load_conversation_op",
+    "create_checkpoint_op",
+    "execute_branch_op",
+    "compare_results_op",
+    # Jobs
     "greeting_job",
+    "greeting_graph_job",
+    "greet_op_job",
+    "checkpoint_job",
 ]
