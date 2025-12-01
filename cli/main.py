@@ -89,6 +89,65 @@ async def _run_prefect_workflow(
     return result
 
 
+async def _run_dagster_workflow(
+    request: ReplayRequest,
+    output_dir: Path,
+) -> dict:
+    """Run workflow via Dagster orchestrator.
+
+    Dagster runs in-process by default (no server required).
+    Progress is displayed during execution via Rich spinner.
+
+    Args:
+        request: The replay request to execute
+        output_dir: Directory to save results
+
+    Returns:
+        ComparisonResult as dict
+    """
+    from orchestrators.dagster.client import generate_job_run_id, run_fork_compare_job
+
+    # Generate job run ID for tracking
+    job_run_id = generate_job_run_id(request.conversation_id)
+
+    console.print(f"[green]✓[/green] Job started: [cyan]{job_run_id}[/cyan]")
+    console.print("[dim]Running in-process mode (no Dagster server required)[/dim]")
+    console.print()
+
+    # Execute job with progress display
+    with Progress(
+        SpinnerColumn(),
+        TextColumn("[progress.description]{task.description}"),
+        TimeElapsedColumn(),
+        console=console,
+    ) as progress:
+        task = progress.add_task("Executing Dagster job...", total=None)
+
+        try:
+            result = await run_fork_compare_job(
+                request_dict=request.model_dump(),
+                run_id=job_run_id,
+            )
+            progress.update(task, description="[green]Job completed[/green]")
+        except Exception:
+            progress.update(task, description="[red]Job failed[/red]")
+            raise
+
+    # Save results
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    result_file = output_dir / f"result-{job_run_id}-{timestamp}.json"
+
+    with open(result_file, "w") as f:
+        json.dump(result, f, indent=2, default=str)
+
+    console.print(f"[green]✓[/green] Results saved to: [cyan]{result_file}[/cyan]")
+
+    return result
+
+
 async def _run_temporal_workflow(
     request: ReplayRequest,
     output_dir: Path,
@@ -483,9 +542,17 @@ def run(
             console.print(f"[red]Error: {e}[/red]")
             raise typer.Exit(1)
     elif orchestrator == "dagster":
-        console.print("[yellow]Orchestrator 'dagster' not yet implemented[/yellow]")
-        console.print("[dim]Coming soon in future releases[/dim]")
-        raise typer.Exit(1)
+        try:
+            result = asyncio.run(
+                _run_dagster_workflow(
+                    request=request,
+                    output_dir=Path(config.settings.output_dir),
+                )
+            )
+            _display_results(result)
+        except Exception as e:
+            console.print(f"[red]Error: {e}[/red]")
+            raise typer.Exit(1)
     else:
         console.print(f"[red]Unknown orchestrator: {orchestrator}[/red]")
         console.print("[dim]Valid options: temporal, prefect, dagster[/dim]")

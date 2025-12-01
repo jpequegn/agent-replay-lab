@@ -19,8 +19,17 @@ workflow, enabling parallel execution with built-in observability.
 - ops.py: Op definitions (atomic computation units)
 - graph.py: Graph and job definitions for Fork & Compare
 - jobs.py: Test job definitions
+- client.py: Client functions for programmatic execution
 """
 
+from orchestrators.dagster.client import (
+    JobRunInfo,
+    JobRunStatus,
+    check_dagster_health,
+    generate_job_run_id,
+    run_fork_compare_job,
+    run_greeting_job,
+)
 from orchestrators.dagster.definitions import checkpoint_job, defs, greet_op_job
 from orchestrators.dagster.graph import (
     ForkCompareConfig,
@@ -45,6 +54,13 @@ from orchestrators.dagster.ops import (
 __all__ = [
     # Definitions
     "defs",
+    # Client Functions
+    "run_fork_compare_job",
+    "run_greeting_job",
+    "generate_job_run_id",
+    "check_dagster_health",
+    "JobRunStatus",
+    "JobRunInfo",
     # Retry Configuration
     "RetryConfig",
     "LOCAL_RETRY_POLICY",
