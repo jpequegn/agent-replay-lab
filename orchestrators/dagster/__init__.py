@@ -17,10 +17,18 @@ workflow, enabling parallel execution with built-in observability.
 
 - definitions.py: Dagster definitions (assets, jobs, resources)
 - ops.py: Op definitions (atomic computation units)
-- jobs.py: Job definitions (orchestration workflows)
+- graph.py: Graph and job definitions for Fork & Compare
+- jobs.py: Test job definitions
 """
 
 from orchestrators.dagster.definitions import checkpoint_job, defs, greet_op_job
+from orchestrators.dagster.graph import (
+    ForkCompareConfig,
+    fork_compare_graph,
+    fork_compare_job,
+    fork_compare_parallel_job,
+    fork_compare_simple_graph,
+)
 from orchestrators.dagster.jobs import greeting_graph_job, greeting_job
 from orchestrators.dagster.ops import (
     CLAUDE_API_RETRY_POLICY,
@@ -48,9 +56,16 @@ __all__ = [
     "create_checkpoint_op",
     "execute_branch_op",
     "compare_results_op",
+    # Graphs
+    "fork_compare_graph",
+    "fork_compare_simple_graph",
     # Jobs
     "greeting_job",
     "greeting_graph_job",
     "greet_op_job",
     "checkpoint_job",
+    "fork_compare_job",
+    "fork_compare_parallel_job",
+    # Config
+    "ForkCompareConfig",
 ]
