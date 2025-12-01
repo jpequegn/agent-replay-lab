@@ -11,6 +11,10 @@ This will start the Dagster UI at http://localhost:3000
 
 from dagster import Definitions, graph, job
 
+from orchestrators.dagster.graph import (
+    fork_compare_job,
+    fork_compare_parallel_job,
+)
 from orchestrators.dagster.jobs import greeting_graph_job, greeting_job
 from orchestrators.dagster.ops import (
     create_checkpoint_op,
@@ -19,7 +23,7 @@ from orchestrators.dagster.ops import (
 )
 
 # =============================================================================
-# Fork & Compare Graph
+# Helper Graphs
 # =============================================================================
 
 
@@ -56,10 +60,15 @@ def greet_op_job():
 
 defs = Definitions(
     jobs=[
+        # Test jobs
         greeting_job,
         greeting_graph_job,
         greet_op_job,
+        # Utility jobs
         checkpoint_job,
+        # Fork & Compare jobs
+        fork_compare_job,
+        fork_compare_parallel_job,
     ],
     # Future: Add assets, schedules, sensors, resources
     # assets=[...],
