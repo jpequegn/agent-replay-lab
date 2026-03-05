@@ -1,0 +1,113 @@
+{
+  "generated_at": "2026-03-05T09:43:11.106502+00:00",
+  "environment": {
+    "python_version": "3.12.12",
+    "platform": "darwin",
+    "benchmark_config": {
+      "num_runs": 3,
+      "num_branches": 3,
+      "simulated_api_latency_ms": 50,
+      "conversation_id": "benchmark-conv-001",
+      "fork_at_step": 5
+    }
+  },
+  "benchmark_request": {
+    "conversation_id": "benchmark-conv-001",
+    "fork_at_step": 5,
+    "branches": [
+      {
+        "name": "sonnet-baseline",
+        "model": "claude-sonnet-4-20250514",
+        "max_turns": 1
+      },
+      {
+        "name": "haiku-speed",
+        "model": "claude-haiku-4-20250514",
+        "max_turns": 1
+      },
+      {
+        "name": "sonnet-inject",
+        "model": "claude-sonnet-4-20250514",
+        "max_turns": 1,
+        "inject_message": "Give me a different approach"
+      }
+    ]
+  },
+  "results": [
+    {
+      "orchestrator": "prefect",
+      "num_runs": 3,
+      "success_count": 3,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "timings_ms": [
+        2957.0423329714686,
+        152.06129208672792,
+        144.20500001870096
+      ],
+      "errors": [],
+      "mean_ms": 1084.4362083589658,
+      "median_ms": 152.06129208672792,
+      "min_ms": 144.20500001870096,
+      "max_ms": 2957.0423329714686,
+      "stdev_ms": 1621.7292325735073,
+      "mean_memory_delta_mb": 50.6875,
+      "overhead_ms": {
+        "mean": 936.3678750193989,
+        "median": 2.061292086727917,
+        "min": 0,
+        "max": 2807.0423329714686
+      }
+    },
+    {
+      "orchestrator": "dagster",
+      "num_runs": 3,
+      "success_count": 3,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "timings_ms": [
+        447.5210830569267,
+        191.01683306507766,
+        193.53799999225885
+      ],
+      "errors": [],
+      "mean_ms": 277.3586387047544,
+      "median_ms": 193.53799999225885,
+      "min_ms": 191.01683306507766,
+      "max_ms": 447.5210830569267,
+      "stdev_ms": 147.37039109535633,
+      "mean_memory_delta_mb": 15.682291666666666,
+      "overhead_ms": {
+        "mean": 127.35863870475441,
+        "median": 43.53799999225885,
+        "min": 41.01683306507766,
+        "max": 297.5210830569267
+      }
+    },
+    {
+      "orchestrator": "temporal",
+      "num_runs": 3,
+      "success_count": 3,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "timings_ms": [
+        395.0747089693323,
+        176.26874998677522,
+        173.78675006330013
+      ],
+      "errors": [],
+      "mean_ms": 248.37673633980253,
+      "median_ms": 176.26874998677522,
+      "min_ms": 173.78675006330013,
+      "max_ms": 395.0747089693323,
+      "stdev_ms": 127.05023203881103,
+      "mean_memory_delta_mb": 9.822916666666666,
+      "overhead_ms": {
+        "mean": 98.37673633980255,
+        "median": 26.26874998677522,
+        "min": 23.786750063300133,
+        "max": 245.07470896933228
+      }
+    }
+  ]
+}
